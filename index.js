@@ -15,6 +15,8 @@ class SmartflandersDataQuery {
     }
   }
 
+  // Interprets a DCAT catalog and saves download links
+  // Returns a promise that resolves when the catalog was added
   addCatalog(catalog) {
     return this.fetch.get(catalog).then(response => {
       // Get datasets
