@@ -17,6 +17,9 @@
   },
   "homepage": "https://github.com/zoeparman/smartflanders-data-query#readme",
   "dependencies": {
+    "ldfetch": "0.0.3",
+    "lodash": "^4.17.4",
+    "moment": "^2.18.1",
     "rxjs": "^5.4.3"
   }
 }
