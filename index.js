@@ -116,23 +116,30 @@ class SmartflandersDataQuery {
     });
   }
 
-  // Gets an interval of data for an entire dataset
+  // Gets an interval of data for the entire catalog
+  // Returns an observable
+  getInterval(from, to) {
+    // TODO
+  }
+
+  // Gets an interval of data for a dataset
   // Returns an Observable
   getDatasetInterval(from, to, datasetUrl) {
     const entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
-    return Rx.Observable.create(observer => {
-      new pdi(from, to, entry, observer).fetch();
-    })
+    return new pdi(from, to, entry).fetch();
   }
 
   // Gets an interval of data for one parking
   // Returns an Observable
-  getParkingInterval(uri, from, to, datasetUrl) {
+  getParkingInterval(from, to, datasetUrl, uri) {
     const entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
-    return Observable.create(observer => {
-      new pdi(from, to, entry, observer).fetch();
-      // TODO filter for parking
-    })
+    return Rx.Observable.create(observer => {
+      new pdi(from, to, entry).fetch().subscribe(meas => {
+        if (meas.parkingUrl === uri) {
+          observer.onNext(meas);
+        }
+      }, (error) => observer.onError(error), () => observer.onCompleted());
+    });
   }
 
   getCatalog() { return this._catalog; }

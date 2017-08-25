@@ -7,16 +7,21 @@ const lodash = require('lodash');
 const util = require('./util.js')
 
 class ParkingDataInterval {
-  constructor(from, to, entry, observer) {
+  constructor(from, to, entry) {
     this.from = from;
     this.to = to;
     this.fetchedUris = [];
     this.entry = entry;
     this.fetchQueue = [entry];
-    this.observer = observer;
   }
 
   fetch() {
+    return Rx.Observable.create(observer => {
+      this.fetch_rec(observer);
+    })
+  }
+
+  fetch_rec(observer) {
     const link = this.fetchQueue.pop();
     if (link !== undefined && this.fetchedUris.indexOf(link) === -1) {
       this.fetchedUris.push(link);
@@ -26,19 +31,19 @@ class ParkingDataInterval {
         let hasOverlap = false;
         filtered.measurements.forEach(measurement => {
           if (this.from <= measurement.timestamp && measurement.timestamp <= this.to) {
-            this.observer.onNext(measurement);
+            observer.onNext(measurement);
             hasOverlap = true;
           }
         });
         if (hasOverlap || link === this.entry) {
           this.fetchQueue = this.fetchQueue.concat(filtered.prevLinks);
         }
-        this.fetch();
+        this.fetch_rec(observer);
       });
     } else if (link !== undefined) {
-      this.fetch();
+      this.fetch_rec(observer);
     } else {
-      this.observer.onCompleted();
+      observer.onCompleted();
     }
   }
 
