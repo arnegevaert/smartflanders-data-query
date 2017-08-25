@@ -83,6 +83,8 @@ class SmartflandersDataQuery {
   // Returns an Observable
   getParkings() {
     return Rx.Observable.create(observer => {
+      let barrier = {};
+      this._catalog.forEach(url => barrier[url] = false);
       this._catalog.forEach(datasetUrl => {
         this.fetch.get(datasetUrl).then(response => {
           // Get all subjects that are parkings
@@ -118,7 +120,19 @@ class SmartflandersDataQuery {
             }
             observer.onNext(parkingObj);
           })
-          observer.onComplete();
+          barrier[datasetUrl] = true;
+          let finished = true;
+          Object.keys(barrier).forEach(key => {if (barrier[key] === false) finished = false});
+          if (finished) {
+            observer.onCompleted();
+          }
+        }).catch(error => {
+          barrier[datasetUrl] = true;
+          let finished = true;
+          Object.keys(barrier).forEach(key => {if (barrier[key] === false) finished = false});
+          if (finished) {
+            observer.onCompleted();
+          }
         });
       });
     });
