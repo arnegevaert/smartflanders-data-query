@@ -14,7 +14,7 @@ dq.addCatalog('https://datapiloten.be/parking/catalog.ttl')
       const from = moment().unix()-60*60*24;
       const to = moment().unix();
       const ds =  dq.getCatalog()[0];
-      dq.getParkingInterval(from, to, ds, 'https://stad.gent/id/parking/P4').subscribe(meas => {
+      dq.getInterval(from, to).subscribe(meas => {
         console.log(meas.parkingUrl, meas.timestamp, meas.value);
       },
       (error) => console.log(error),

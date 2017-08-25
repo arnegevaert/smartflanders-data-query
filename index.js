@@ -119,7 +119,26 @@ class SmartflandersDataQuery {
   // Gets an interval of data for the entire catalog
   // Returns an observable
   getInterval(from, to) {
-    // TODO
+    let barrier = {};
+    this._catalog.forEach(url => barrier[url] = false);
+    
+    return Rx.Observable.create(observer => {
+      this._catalog.forEach(dataset => {
+        const entry = dataset + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+        new pdi(from, to, entry).fetch().subscribe(meas => {
+          observer.onNext(meas);
+        }, (error) => observer.onError(error), () => {
+          barrier[dataset] = true;
+          let done = true;
+          Object.keys(barrier).forEach(key => {
+            if (!barrier[key]) {
+              done = false;
+            }
+          });
+          if (done) observer.onCompleted();
+        })
+      })
+    })
   }
 
   // Gets an interval of data for a dataset
