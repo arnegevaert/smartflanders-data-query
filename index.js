@@ -4,6 +4,9 @@ const moment = require('moment');
 const lodash = require('lodash');
 const n3 = require('n3');
 
+const pdi = require('./parking-data-interval.js');
+const util = require('./util.js');
+
 class SmartflandersDataQuery {
   constructor() {
     this.fetch = new ldfetch();
@@ -24,7 +27,7 @@ class SmartflandersDataQuery {
   addCatalog(catalog) {
     return this.fetch.get(catalog).then(response => {
       // Get datasets
-      let datasets = this.filterTriples({
+      let datasets = util.filterTriples({
         predicate: this.buildingBlocks.pRdfType,
         object: this.buildingBlocks.oDcatDataset
       }, response.triples);
@@ -32,7 +35,7 @@ class SmartflandersDataQuery {
       // Get their distributions
       let distributions = [];
       datasets.forEach(d => {
-        distributions = distributions.concat(this.filterTriples({
+        distributions = distributions.concat(util.filterTriples({
           subject: d.subject,
           predicate: this.buildingBlocks.pDcatDistribution
         }, response.triples));
@@ -41,7 +44,7 @@ class SmartflandersDataQuery {
       // Get their download links
       let downlinks = [];
       distributions.forEach(d => {
-        downlinks = downlinks.concat(this.filterTriples({
+        downlinks = downlinks.concat(util.filterTriples({
           subject: d.object,
           predicate: this.buildingBlocks.pDcatDownloadUrl
         }, response.triples));
@@ -63,22 +66,6 @@ class SmartflandersDataQuery {
     }
   }
 
-  // Filters a list of triples using a given template
-  // Returns an array of matching triples
-  filterTriples(template, triples) {
-    let result = [];
-    triples.forEach(t => {
-      let match = (template.graph === undefined || t.graph === template.graph) &&
-                  (template.subject === undefined || t.subject === template.subject) &&
-                  (template.predicate === undefined || t.predicate === template.predicate) &&
-                  (template.object === undefined || t.object === template.object);
-      if (match) {
-        result.push(t);
-      }
-    });
-    return result;
-  }
-
   // Gets parkings from all datasets in catalog
   // Returns an Observable
   getParkings() {
@@ -88,24 +75,15 @@ class SmartflandersDataQuery {
       this._catalog.forEach(datasetUrl => {
         this.fetch.get(datasetUrl).then(response => {
           // Get all subjects that are parkings
-          const parkings = [], totalspacesParking = [], labels = [];
-          response.triples.forEach(triple => {
-            if (triple.object === this.buildingBlocks.oDatexUrbanParkingSite) {
-              parkings.push(triple);
-            }
-            if (triple.predicate === this.buildingBlocks.pDatexParkingNumberOfSpaces) {
-              totalspacesParking.push(triple);
-            }
-            if (triple.predicate === this.buildingBlocks.pRdfsLabel) {
-              labels.push(triple);
-            }
-          });
+          const parkings = util.filterTriples({object: this.buildingBlocks.oDatexUrbanParkingSite}, response.triples);
+          const totalspaces = util.filterTriples({predicate: this.buildingBlocks.pDatexParkingNumberOfSpaces}, response.triples);
+          const labels = util.filterTriples({predicate: this.buildingBlocks.pRdfsLabel}, response.triples);
           if (parkings.length <= 0) {
             observer.onError('No parkings found in dataset: ', datasetUrl);
           }
           parkings.forEach(parking => {
-            const totalspacesresult = lodash.find(totalspacesParking, (o) => o.subject === parking.subject);
-            const totalspaces = parseInt(n3.Util.getLiteralValue(totalspacesresult.object), 10);
+            const totalspacesresult = lodash.find(totalspaces, (o) => o.subject === parking.subject);
+            const totalspacesParking = parseInt(n3.Util.getLiteralValue(totalspacesresult.object), 10);
             const labelresult = lodash.find(labels, (o) => {
               return o.subject === parking.subject
             });
@@ -115,7 +93,7 @@ class SmartflandersDataQuery {
               label: rdfslabel,
               uri: parking.subject,
               id: id,
-              totalSpaces: totalspaces,
+              totalSpaces: totalspacesParking,
               datasetUrl: datasetUrl,
             }
             observer.onNext(parkingObj);
@@ -136,6 +114,25 @@ class SmartflandersDataQuery {
         });
       });
     });
+  }
+
+  // Gets an interval of data for an entire dataset
+  // Returns an Observable
+  getDatasetInterval(from, to, datasetUrl) {
+    const entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+    return Rx.Observable.create(observer => {
+      new pdi(from, to, entry, observer).fetch();
+    })
+  }
+
+  // Gets an interval of data for one parking
+  // Returns an Observable
+  getParkingInterval(uri, from, to, datasetUrl) {
+    const entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+    return Observable.create(observer => {
+      new pdi(from, to, entry, observer).fetch();
+      // TODO filter for parking
+    })
   }
 
   getCatalog() { return this._catalog; }
