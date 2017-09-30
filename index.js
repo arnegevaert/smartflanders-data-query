@@ -88,16 +88,30 @@ class SmartflandersDataQuery {
         }
     }
 
+    hasMDIEntry(dataset) {
+        return this._rangegates[dataset] !== undefined;
+    }
+
+    getMDIEntry(dataset) {
+        return this._rangegates[dataset];
+    }
+
     // Gets parkings from all datasets in catalog
     // Returns an Observable
     getParkings() {
         return Rx.Observable.create(observer => {
             let barrier = {};
-            this._catalog.forEach(url => barrier[url] = false);
+            this._catalog.forEach(url => {
+                if (this.hasMDIEntry(url)) {
+                    barrier[this.getMDIEntry(url)] = false
+                } else {
+                    barrier[url] = false;
+                }
+            });
             this._catalog.forEach(datasetUrl => {
                 // If we have an MDI entry point, use that one
-                if (this._rangegates[datasetUrl] !== undefined) {
-                    datasetUrl = this._rangegates[datasetUrl];
+                if (this.hasMDIEntry(datasetUrl)) {
+                    datasetUrl = this.getMDIEntry(url);
                 }
                 this.fetch.get(datasetUrl).then(response => {
                     // Get all subjects that are parkings
@@ -150,14 +164,30 @@ class SmartflandersDataQuery {
     // TODO use MDI here if possible!
     // Gets an interval of data for the entire catalog
     // Returns an observable
-    getInterval(from, to) {
+    // conf: mode: precision: 'precise': get exact data from leaf level (default)
+    //                        'day': get data per day (1 level above leaf)
+    //             depth: go up to depth levels deep (leaf if depth exceeds actual depth) (overrides precision)
+    getInterval(from, to, conf = {mode: {precision: 'precise'}}) {
         let barrier = {};
-        this._catalog.forEach(url => barrier[url] = false);
+        this._catalog.forEach(url => {
+            if (this.hasMDIEntry(url)) {
+                barrier[this.getMDIEntry(url)] = false;
+            } else {
+                barrier[url] = false
+            }
+        });
 
         return Rx.Observable.create(observer => {
             this._catalog.forEach(dataset => {
-                const entry = dataset + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
-                new pdi(from, to, entry).fetch().subscribe(meas => {
+                let entry = dataset + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+                let fetchConf = conf;
+                if (this.hasMDIEntry(dataset)) {
+                    entry = this.getMDIEntry(dataset);
+                    conf.mdi = true;
+                } else {
+                    conf.mdi = false;
+                }
+                new pdi(from, to, entry).fetch(fetchConf).subscribe(meas => {
                     observer.onNext(meas);
                 }, (error) => observer.onError(error), () => {
                     barrier[dataset] = true;
