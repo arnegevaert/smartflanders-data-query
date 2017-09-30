@@ -3,6 +3,7 @@ const ldfetch = require('ldfetch');
 const moment = require('moment');
 const lodash = require('lodash');
 const n3 = require('n3');
+const thr = require('throw');
 
 const pdi = require('./parking-data-interval.js');
 const util = require('./util.js');
@@ -78,6 +79,15 @@ class SmartflandersDataQuery {
         }
     }
 
+    // Adds an MDI entry point for a certain dataset
+    addMDIEntry(dataset, rangegate) {
+        if (this._catalog.includes(dataset)) {
+            this._rangegates[dataset] = rangegate;
+        } else {
+            thr('Dataset URL not found in internal catalog: ' + dataset);
+        }
+    }
+
     // Gets parkings from all datasets in catalog
     // Returns an Observable
     getParkings() {
@@ -85,6 +95,10 @@ class SmartflandersDataQuery {
             let barrier = {};
             this._catalog.forEach(url => barrier[url] = false);
             this._catalog.forEach(datasetUrl => {
+                // If we have an MDI entry point, use that one
+                if (this._rangegates[datasetUrl] !== undefined) {
+                    datasetUrl = this._rangegates[datasetUrl];
+                }
                 this.fetch.get(datasetUrl).then(response => {
                     // Get all subjects that are parkings
                     const parkings = util.filterTriples({object: this.buildingBlocks.oDatexUrbanParkingSite}, response.triples);
@@ -107,9 +121,9 @@ class SmartflandersDataQuery {
                             id: id,
                             totalSpaces: totalspacesParking,
                             datasetUrl: datasetUrl,
-                        }
+                        };
                         observer.onNext(parkingObj);
-                    })
+                    });
                     barrier[datasetUrl] = true;
                     let finished = true;
                     Object.keys(barrier).forEach(key => {
@@ -132,6 +146,8 @@ class SmartflandersDataQuery {
         });
     }
 
+
+    // TODO use MDI here if possible!
     // Gets an interval of data for the entire catalog
     // Returns an observable
     getInterval(from, to) {
