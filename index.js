@@ -8,6 +8,8 @@ const thr = require('throw');
 const pdi = require('./parking-data-interval.js');
 const util = require('./util.js');
 
+// TODO change MDI building blocks prefixes! Also in backend
+
 class SmartflandersDataQuery {
     constructor() {
         this.fetch = new ldfetch();
@@ -111,7 +113,7 @@ class SmartflandersDataQuery {
             this._catalog.forEach(datasetUrl => {
                 // If we have an MDI entry point, use that one
                 if (this.hasMDIEntry(datasetUrl)) {
-                    datasetUrl = this.getMDIEntry(url);
+                    datasetUrl = this.getMDIEntry(datasetUrl);
                 }
                 this.fetch.get(datasetUrl).then(response => {
                     // Get all subjects that are parkings
@@ -161,33 +163,28 @@ class SmartflandersDataQuery {
     }
 
 
-    // TODO use MDI here if possible!
     // Gets an interval of data for the entire catalog
     // Returns an observable
     // conf: mode: precision: 'precise': get exact data from leaf level (default)
     //                        'day': get data per day (1 level above leaf)
-    //             depth: go up to depth levels deep (leaf if depth exceeds actual depth) (overrides precision)
+    //             zoomLevel: go up to zoomLevel levels deep (leaf if zoomLevel exceeds actual depth) (overrides precision)
     getInterval(from, to, conf = {mode: {precision: 'precise'}}) {
         let barrier = {};
         this._catalog.forEach(url => {
             if (this.hasMDIEntry(url)) {
                 barrier[this.getMDIEntry(url)] = false;
             } else {
-                barrier[url] = false
+                barrier[url] = false;
             }
         });
 
         return Rx.Observable.create(observer => {
             this._catalog.forEach(dataset => {
                 let entry = dataset + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
-                let fetchConf = conf;
                 if (this.hasMDIEntry(dataset)) {
                     entry = this.getMDIEntry(dataset);
-                    conf.mdi = true;
-                } else {
-                    conf.mdi = false;
                 }
-                new pdi(from, to, entry).fetch(fetchConf).subscribe(meas => {
+                new pdi(from, to, entry).fetch(conf).subscribe(meas => {
                     observer.onNext(meas);
                 }, (error) => observer.onError(error), () => {
                     barrier[dataset] = true;
