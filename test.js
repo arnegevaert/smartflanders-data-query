@@ -8,9 +8,7 @@ dq.addMDIEntry('http://kortrijk.datapiloten.be/parking',
     'http://kortrijk.datapiloten.be/parking/rangegate');
 
 let now = moment().unix();
-dq.getParkingInterval(now - 60*60*24*2, now,
-    'http://kortrijk.datapiloten.be/parking',
-    'http://kortrijk.datapiloten.be/parking#P-Houtmarkt',
+dq.getInterval(now - 60*60*24*2, now,
     {mode: {precision: "day"}}).subscribe(
         stat => console.log("STAT", stat),
         error => console.log(error),

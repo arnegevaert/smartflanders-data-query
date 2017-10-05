@@ -23,7 +23,7 @@ class SmartflandersDataQuery {
             pDcatDistribution: 'http://www.w3.org/ns/dcat#distribution',
             pDcatDownloadUrl: 'http://www.w3.org/ns/dcat#downloadURL',
             pRdfType: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-            mdiHasRangegate: 'http://semweb.datasciencelab.be/ns/multidimensional-interface/hasRangeGate'
+            mdiHasRangegate: 'http://w3id.org/multidimensional-interface/ontology#hasRangeGate'
         }
     }
 

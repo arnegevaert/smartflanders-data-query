@@ -19,7 +19,7 @@ module.exports.filterTriples = function (template, triples) {
 };
 
 module.exports.getSubRangeGatesFromTriples = function (triples) {
-    const hasRangeGate = 'http://semweb.datasciencelab.be/ns/multidimensional-interface/hasRangeGate';
+    const hasRangeGate = 'http://w3id.org/multidimensional-interface/ontology#hasRangeGate';
 
     const rgTriples = module.exports.filterTriples({predicate: hasRangeGate}, triples);
     const result = [];
@@ -36,8 +36,8 @@ module.exports.checkDayLevel = function(triples) {
 };
 
 module.exports.getBounds = function(triples) {
-    const pInitial = 'http://semweb.datasciencelab.be/ns/multidimensional-interface/initial';
-    const pFinal = 'http://semweb.datasciencelab.be/ns/multidimensional-interface/final';
+    const pInitial = 'http://w3id.org/multidimensional-interface/ontology#initial';
+    const pFinal = 'http://w3id.org/multidimensional-interface/ontology#final';
 
     const initTriple = lodash.find(triples, t => t.predicate === pInitial);
     const finalTriple = lodash.find(triples, t => t.predicate === pFinal);

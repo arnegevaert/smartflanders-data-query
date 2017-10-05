@@ -28,7 +28,7 @@ class ParkingDataInterval {
             this.fetchedUris.push(link);
             new ldfetch().get(link).then(response => {
                 this.fetchedUris.push(response.url);
-                const hasRangeGate = 'http://semweb.datasciencelab.be/ns/multidimensional-interface/hasRangeGate';
+                const hasRangeGate = 'http://w3id.org/multidimensional-interface/ontology#hasRangeGate';
                 if (util.filterTriples({predicate: hasRangeGate}, response.triples).length === 0) {
                     // We fetched precise data, parse and filter
                     const filtered = this.getMeasurements(response.triples);
@@ -112,8 +112,8 @@ class ParkingDataInterval {
         const pThirdQuartile = 'http://datapiloten.be/vocab/timeseries#thirdQuartile';
         const parkingSite = 'http://vocab.datex.org/terms#UrbanParkingSite';
         const pRdfType = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
-        const pInitial = 'http://semweb.datasciencelab.be/ns/multidimensional-interface/initial';
-        const pFinal = 'http://semweb.datasciencelab.be/ns/multidimensional-interface/final';
+        const pInitial = 'http://w3id.org/multidimensional-interface/ontology#initial';
+        const pFinal = 'http://w3id.org/multidimensional-interface/ontology#final';
         const result = [];
 
         const initTriple = lodash.find(triples, t => t.predicate === pInitial);
