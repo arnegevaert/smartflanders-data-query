@@ -31,63 +31,11 @@ class ParkingDataInterval {
                 const hasRangeGate = 'http://w3id.org/multidimensional-interface/ontology#hasRangeGate';
                 if (util.filterTriples({predicate: hasRangeGate}, response.triples).length === 0) {
                     // We fetched precise data, parse and filter
-                    const filtered = this.getMeasurements(response.triples);
-                    let hasOverlap = false;
-                    filtered.measurements.forEach(measurement => {
-                        if (this.from <= measurement.timestamp && measurement.timestamp <= this.to) {
-                            observer.onNext(measurement);
-                            hasOverlap = true;
-                        }
-                    });
-                    if (hasOverlap || link === this.entry) {
-                        this.fetchQueue = this.fetchQueue.concat(filtered.prevLinks);
-                    }
+                    this.processExact(response, observer, link);
                     this.fetch_rec(observer);
                 } else {
                     // We fetched a range gate, decide if we need to fetch the children
-                    console.log("Recognized range gate at ", link);
-                    if (conf.mode.zoomLevel !== undefined) {
-                        // Go conf.mode.zoomLevel levels deep
-                        if (conf.curDepth < conf.mode.zoomLevel) {
-                            if (this.checkRangeGateIntervalOverlap(response.triples)) {
-                                console.log("Overlap detected at ", link);
-                                const subRangeGates = util.getSubRangeGatesFromTriples(response.triples);
-                                subRangeGates.forEach(rg => {
-                                    this.fetchQueue.push(rg);
-                                });
-                                conf.curDepth++;
-                            }
-                        } else if (conf.curDepth === conf.mode.zoomLevel) {
-                            // return statistical summary data
-                            console.log("Zoom level reached: ", conf.curDepth);
-                            if (this.checkRangeGateIntervalOverlap(response.triples)) {
-                                const stats = this.getStatisticalSummary(response.triples);
-                                stats.forEach(s => observer.onNext(s));
-                            }
-                        }
-                    } else if (conf.mode.precision === 'precise') {
-                        if (this.checkRangeGateIntervalOverlap(response.triples)) {
-                            console.log("Overlap detected at ", link);
-                            const subRangeGates = util.getSubRangeGatesFromTriples(response.triples);
-                            subRangeGates.forEach(rg => {
-                                this.fetchQueue.push(rg);
-                            });
-                        }
-                    } else if (conf.mode.precision === 'day') {
-                        if (this.checkRangeGateIntervalOverlap(response.triples)) {
-                            console.log("Overlap detected at ", link);
-                            if (!util.checkDayLevel(response.triples)) {
-                                const subRangeGates = util.getSubRangeGatesFromTriples(response.triples);
-                                subRangeGates.forEach(rg => {
-                                    this.fetchQueue.push(rg);
-                                });
-                            } else {
-                                console.log("Day level detected at ", link);
-                                const stats = this.getStatisticalSummary(response.triples);
-                                stats.forEach(s => observer.onNext(s));
-                            }
-                        }
-                    }
+                    this.processRangeGate(response, observer, link, conf);
                     this.fetch_rec(observer, conf)
                 }
             });
@@ -96,6 +44,55 @@ class ParkingDataInterval {
         } else {
             observer.onCompleted();
         }
+    }
+
+    processExact(response, observer, link) {
+        const filtered = this.getMeasurements(response.triples);
+        let hasOverlap = false;
+        filtered.measurements.forEach(measurement => {
+            if (this.from <= measurement.timestamp && measurement.timestamp <= this.to) {
+                observer.onNext(measurement);
+                hasOverlap = true;
+            }
+        });
+        if (hasOverlap || link === this.entry) {
+            this.fetchQueue = this.fetchQueue.concat(filtered.prevLinks);
+        }
+    }
+
+    processRangeGate(response, observer, link, conf) {
+        const subRangeGates = util.getSubRangeGatesFromTriples(response.triples);
+        if (this.checkRangeGateIntervalOverlap(response.triples)) {
+            if (conf.mode.zoomLevel !== undefined) {
+                // Go conf.mode.zoomLevel levels deep
+                if (conf.curDepth < conf.mode.zoomLevel) {
+                    subRangeGates.forEach(rg => {
+                        this.fetchQueue.push(rg);
+                    });
+                    conf.curDepth++;
+                } else if (conf.curDepth === conf.mode.zoomLevel) {
+                    // return statistical summary data
+                    this.processStats(response.triples, observer);
+                }
+            } else if (conf.mode.precision === 'precise') {
+                subRangeGates.forEach(rg => {
+                    this.fetchQueue.push(rg);
+                });
+            } else if (conf.mode.precision === 'day') {
+                if (util.checkDayLevel(response.triples)) {
+                    this.processStats(response.triples, observer);
+                } else {
+                    subRangeGates.forEach(rg => {
+                        this.fetchQueue.push(rg);
+                    });
+                }
+            }
+        }
+    }
+
+    processStats(triples, observer) {
+        const stats = this.getStatisticalSummary(triples);
+        stats.forEach(s => observer.onNext(s));
     }
 
     checkRangeGateIntervalOverlap(triples) {
