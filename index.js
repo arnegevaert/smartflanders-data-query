@@ -202,17 +202,23 @@ class SmartflandersDataQuery {
 
     // Gets an interval of data for a dataset
     // Returns an Observable
-    getDatasetInterval(from, to, datasetUrl) {
-        const entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
-        return new pdi(from, to, entry).fetch();
+    getDatasetInterval(from, to, datasetUrl, conf = {mode: {precision: 'precise'}}) {
+        let entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+        if (this.hasMDIEntry(datasetUrl)) {
+            entry = this.getMDIEntry(datasetUrl);
+        }
+        return new pdi(from, to, entry).fetch(conf);
     }
 
     // Gets an interval of data for one parking
     // Returns an Observable
-    getParkingInterval(from, to, datasetUrl, uri) {
-        const entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+    getParkingInterval(from, to, datasetUrl, uri, conf = {mode: {precision: 'precise'}}) {
+        let entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+        if (this.hasMDIEntry(datasetUrl)) {
+            entry = this.getMDIEntry(datasetUrl);
+        }
         return Rx.Observable.create(observer => {
-            new pdi(from, to, entry).fetch().subscribe(meas => {
+            new pdi(from, to, entry).fetch(conf).subscribe(meas => {
                 if (meas.parkingUrl === uri) {
                     observer.onNext(meas);
                 }

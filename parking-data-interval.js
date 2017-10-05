@@ -133,7 +133,7 @@ class ParkingDataInterval {
             result.push({
                 init: init,
                 final: final,
-                parking: p,
+                parkingUrl: p.subject,
                 mean: mean,
                 variance: variance,
                 firstQuartile: firstQ,
