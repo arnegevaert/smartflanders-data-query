@@ -60,7 +60,6 @@ This object represent a statistical summary of the occupancy of a certain parkin
 - `median`: Contains the median of the absolute occupancy of the parking over the interval.
 
 ## Interface
-[//]: <> (TODO add link to zoom level)
 ### Config
 Some functions have an optional argument `conf`. This argument is only relevant for datasets that have an MDI entry,
 and specifies how deep to traverse the MDI tree. Possible configurations are:
@@ -74,7 +73,7 @@ and specifies how deep to traverse the MDI tree. Possible configurations are:
 extracted and added to the internal catalog. Any [MDI](http://semweb.datasciencelab.be/ns/multidimensional-interface/)
 entry points are also detected (by looking for the predicate `https://w3id.org/multidimensional-interface/ontology#hasRangeGate`)
 and added to a separate internal catalog. These MDI entry points are automatically used when possible to increase performance,
-and can also be used to view the time series at a certain zoom level (see further).
+and can also be used to view the time series at a certain zoom level (see above).
 Returns a [Promise](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Promise) that is resolved when the data was successfully fetched and processed.
 - `getCatalog()`: Returns the internal catalog of datasets. This is an array of dataset URLs.
 - `addDataset(dataset)`: Adds a literal dataset URL to the internal catalog.
@@ -100,7 +99,6 @@ Returns an [Observable](http://reactivex.io/rxjs/class/es6/Observable.js~Observa
 Below are some examples of usages of this library:
 
 ### Example 1
-[//]: <> (TODO more examples using MDI)
 This example adds a catalog file, prints the labels of the parkings that are found in this catalog, and then fetches and prints all data from all parkings of the last 24 hours:
 ``` js
 const query = require('smartflanders-data-query');
@@ -146,4 +144,46 @@ dq.getParkings().subscribe(parking => {
 },
 (error) => console.log(error),
 () => console.log('Complete!'));
+```
+
+### Example 3
+This example adds an MDI entry to the internal store that corresponds to the added dataset. This MDI entry point is
+then used to fetch aggregated data. The `{mode: {precision: "day"}}` argument ensures the data will be aggregated
+on day level, meaning the statistics will be calculated over the span of 1 day.
+``` js
+const query = require('smartflanders-data-query');
+const moment = require('moment');
+
+let dq = new query();
+
+dq.addDataset('http://kortrijk.datapiloten.be/parking');
+dq.addMDIEntry('http://kortrijk.datapiloten.be/parking',
+    'http://kortrijk.datapiloten.be/parking/rangegate');
+
+let now = moment().unix();
+dq.getInterval(now - 60*60*24*2, now,
+    {mode: {precision: "day"}}).subscribe(
+        stat => console.log("STAT:", stat),
+        error => console.log(error),
+        () => console.log('Complete'));
+```
+
+### Example 4
+In this example, we interpret a DCAT catalog again and fetch aggregated statistical data on zoom level 3 (the corresponding
+timespan over which the data is aggregated depends on the publisher). Note that we make the assumption that the DCAT
+catalog contains MDI entries for all datasets. Any datasets in the catalog that don't have a corresponding MDI entry
+will be queried directly, i.e. the exact data will be fetched over this interval rather than the statistical data.
+```
+const query = require('smartflanders-data-query');
+const moment = require('moment');
+
+let dq = new query();
+dq.addCatalog('https://datapiloten.be/parking/catalog.ttl');
+
+let now = moment().unix();
+dq.getInterval(now - 60*60*24*2, now,
+    {mode: {zoomLevel: 3}}).subscribe(
+        stat => console.log("STAT:", stat),
+        error => console.log(error),
+        () => console.log('Complete'));
 ```
