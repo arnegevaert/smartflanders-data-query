@@ -26,19 +26,24 @@ class ParkingDataInterval {
         const link = this.fetchQueue.pop();
         if (link !== undefined && this.fetchedUris.indexOf(link) === -1) {
             this.fetchedUris.push(link);
-            new ldfetch().get(link).then(response => {
-                this.fetchedUris.push(response.url);
-                const hasRangeGate = 'http://w3id.org/multidimensional-interface/ontology#hasRangeGate';
-                if (util.filterTriples({predicate: hasRangeGate}, response.triples).length === 0) {
+            const fetch = new ldfetch();
+            fetch.get(link).then(response => {
+                if (!this.fetchedUris.includes(response.url)) {
+                    this.fetchedUris.push(response.url);
+                }
+                //console.log('fetched ', link);
+                if (util.filterTriples({predicate: 'http://rdfs.org/ns/void#subset', object: response.url}, response.triples).length !== 0) {
                     // We fetched precise data, parse and filter
+                    //console.log(link, " is a leaf node");
                     this.processExact(response, observer, link);
                     this.fetch_rec(observer);
                 } else {
                     // We fetched a range gate, decide if we need to fetch the children
+                    //console.log(link, " is a range gate");
                     this.processRangeGate(response, observer, link, conf);
-                    this.fetch_rec(observer, conf)
+                    this.fetch_rec(observer, conf);
                 }
-            });
+            }).catch(error => console.log('Error: ', error));
         } else if (link !== undefined) {
             this.fetch_rec(observer);
         } else {
@@ -60,7 +65,7 @@ class ParkingDataInterval {
         }
     }
 
-    processRangeGate(response, observer, link, conf) {
+    processRangeGate(response, observer, conf) {
         const subRangeGates = util.getSubRangeGatesFromTriples(response.triples);
         if (this.checkRangeGateIntervalOverlap(response.triples)) {
             if (conf.mode.zoomLevel !== undefined) {
