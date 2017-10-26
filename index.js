@@ -8,8 +8,6 @@ const thr = require('throw');
 const pdi = require('./parking-data-interval.js');
 const util = require('./util.js');
 
-// TODO change MDI building blocks prefixes! Also in backend
-
 class SmartflandersDataQuery {
     constructor() {
         this.fetch = new ldfetch();
@@ -130,13 +128,11 @@ class SmartflandersDataQuery {
                             return o.subject === parking.subject
                         });
                         const rdfslabel = n3.Util.getLiteralValue(labelresult.object);
-                        const id = rdfslabel.replace(' ', '-').toLowerCase();
                         const parkingObj = {
                             label: rdfslabel,
-                            uri: parking.subject,
-                            id: id,
+                            '@id': parking.subject,
                             totalSpaces: totalspacesParking,
-                            datasetUrl: datasetUrl,
+                            dataset: {'@id': datasetUrl},
                         };
                         observer.onNext(parkingObj);
                     });
