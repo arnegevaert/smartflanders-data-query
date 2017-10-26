@@ -1,14 +1,16 @@
 const query = require('./index.js');
 const moment = require('moment');
+const ldfetch = require('ldfetch');
 
 let dq = new query();
 
-dq.addDataset('https://linked.open.gent/parking');
-dq.addDataset('https://kortrijk.datapiloten.be/parking');
-dq.addDataset('https://leuven.datapiloten.be/parking');
+//dq.addCatalog('https://datapiloten.be/parking/catalog.ttl');
 
-dq.getParkings().subscribe(parking => {
-  console.log(parking.label);
-},
-(error) => console.log(error),
-() => console.log('Complete!'));
+dq.addDataset('http://kortrijk.datapiloten.be/parking');
+
+let now = moment().unix();
+
+dq.getParkings(now - 60*60*24*2, now).subscribe(
+        data => {console.log(data)},
+        error => console.log(error),
+        () => console.log('Complete'));
