@@ -46,10 +46,11 @@ class SmartflandersDataQuery {
 
             // Get any rangegates (MDI entry points)
             datasets.forEach(d => {
+                console.log(d);
                 util.filterTriples({
                     subject: d.subject,
                     predicate: this.buildingBlocks.mdiHasRangegate
-                }).forEach(t => {
+                }, response.triples).forEach(t => {
                     this._rangegates[d.subject] = t.object;
                 });
             });

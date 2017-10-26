@@ -32,7 +32,7 @@ class ParkingDataInterval {
                     this.fetchedUris.push(response.url);
                 }
                 //console.log('fetched ', link);
-                if (util.filterTriples({predicate: 'http://rdfs.org/ns/void#subset', object: response.url}, response.triples).length === 0) {
+                if (util.filterTriples({predicate: 'http://rdfs.org/ns/void#subset', object: response.url}, response.triples).length !== 0) {
                     // We fetched precise data, parse and filter
                     //console.log(link, " is a leaf node");
                     this.processExact(response, observer, link);
@@ -40,7 +40,7 @@ class ParkingDataInterval {
                 } else {
                     // We fetched a range gate, decide if we need to fetch the children
                     //console.log(link, " is a range gate");
-                    this.processRangeGate(response, observer, link, conf);
+                    this.processRangeGate(response, observer, conf);
                     this.fetch_rec(observer, conf);
                 }
             }).catch(error => console.log('Error: ', error));
@@ -112,10 +112,11 @@ class ParkingDataInterval {
         const pVariance = 'http://datapiloten.be/vocab/timeseries#variance';
         const pFirstQuartile = 'http://datapiloten.be/vocab/timeseries#firstQuartile';
         const pThirdQuartile = 'http://datapiloten.be/vocab/timeseries#thirdQuartile';
-        const parkingSite = 'http://vocab.datex.org/terms#UrbanParkingSite';
+        const summary = 'http://datapiloten.be/vocab/timeseries#Summary';
         const pRdfType = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
         const pInitial = 'http://w3id.org/multidimensional-interface/ontology#initial';
         const pFinal = 'http://w3id.org/multidimensional-interface/ontology#final';
+        const pRdfSubject = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#subject';
         const result = [];
 
         const initTriple = lodash.find(triples, t => t.predicate === pInitial);
@@ -124,18 +125,19 @@ class ParkingDataInterval {
         const init = moment(n3.Util.getLiteralValue(initTriple.object)).unix();
         const final = moment(n3.Util.getLiteralValue(finalTriple.object)).unix();
 
-        const parkings = util.filterTriples({predicate: pRdfType, object: parkingSite}, triples);
-        parkings.forEach(p => {
-            const mean = n3.Util.getLiteralValue(lodash.find(triples, t => t.subject === p.subject && t.predicate === pMean).object);
-            const median = n3.Util.getLiteralValue(lodash.find(triples, t => t.subject === p.subject && t.predicate === pMedian).object);
-            const variance = n3.Util.getLiteralValue(lodash.find(triples, t => t.subject === p.subject && t.predicate === pVariance).object);
-            const firstQ = n3.Util.getLiteralValue(lodash.find(triples, t => t.subject === p.subject && t.predicate === pFirstQuartile).object);
-            const thirdQ = n3.Util.getLiteralValue(lodash.find(triples, t => t.subject === p.subject && t.predicate === pThirdQuartile).object);
+        const summaries = util.filterTriples({predicate: pRdfType, object: summary}, triples);
+        summaries.forEach(s => {
+            const mean = n3.Util.getLiteralValue(lodash.find(triples, t => t.subject === s.subject && t.predicate === pMean).object);
+            const median = n3.Util.getLiteralValue(lodash.find(triples, t => t.subject === s.subject && t.predicate === pMedian).object);
+            const variance = n3.Util.getLiteralValue(lodash.find(triples, t => t.subject === s.subject && t.predicate === pVariance).object);
+            const firstQ = n3.Util.getLiteralValue(lodash.find(triples, t => t.subject === s.subject && t.predicate === pFirstQuartile).object);
+            const thirdQ = n3.Util.getLiteralValue(lodash.find(triples, t => t.subject === s.subject && t.predicate === pThirdQuartile).object);
+            const parking = lodash.find(triples, t => t.subject === s.subject && t.predicate === pRdfSubject).object;
 
             result.push({
                 init: init,
                 final: final,
-                parking: {'@id': p.subject},
+                parking: {'@id': parking},
                 mean: mean,
                 variance: variance,
                 firstQuartile: firstQ,
