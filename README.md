@@ -177,12 +177,13 @@ const query = require('smartflanders-data-query');
 const moment = require('moment');
 
 let dq4 = new query();
-dq4.addCatalog('https://datapiloten.be/parking/catalog.ttl');
+let now4 = moment().unix();
 
-let now = moment().unix();
-dq4.getInterval(now - 60*60*24*2, now,
-    {mode: {zoomLevel: 3}}).subscribe(
+dq4.addCatalog('https://datapiloten.be/parking/catalog.ttl').then(() => {
+    dq4.getInterval(now4 - 60*60*24*2, now4,
+        {mode: {zoomLevel: 3}}).subscribe(
         stat => console.log("STAT:", stat),
         error => console.log(error),
         () => console.log('Complete'));
+});
 ```

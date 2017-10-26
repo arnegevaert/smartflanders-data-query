@@ -21,12 +21,14 @@ class SmartflandersDataQuery {
             pDcatDistribution: 'http://www.w3.org/ns/dcat#distribution',
             pDcatDownloadUrl: 'http://www.w3.org/ns/dcat#downloadURL',
             pRdfType: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-            mdiHasRangegate: 'http://w3id.org/multidimensional-interface/ontology#hasRangeGate'
+            mdiHasRangegate: 'http://w3id.org/multidimensional-interface/ontology#hasRangeGate',
+            mdiHasRangegateAlt: 'http://semweb.datasciencelab.be/ns/multidimensional-interface/hasRangeGate'
         }
     }
 
     // Interprets a DCAT catalog and saves download links
     // Returns a promise that resolves when the catalog was added
+    // TODO this can be optimized
     addCatalog(catalog) {
         return this.fetch.get(catalog).then(response => {
             // Get datasets
@@ -46,12 +48,23 @@ class SmartflandersDataQuery {
 
             // Get any rangegates (MDI entry points)
             datasets.forEach(d => {
-                console.log(d);
-                util.filterTriples({
-                    subject: d.subject,
-                    predicate: this.buildingBlocks.mdiHasRangegate
-                }, response.triples).forEach(t => {
-                    this._rangegates[d.subject] = t.object;
+                [this.buildingBlocks.mdiHasRangegate, this.buildingBlocks.mdiHasRangegateAlt].forEach(mdi => {
+                    util.filterTriples({
+                        subject: d.subject,
+                        predicate: mdi
+                    }, response.triples).forEach(t => {
+                        // Get distribution for dataset
+                        let distr = util.filterTriples({
+                            subject: d.subject,
+                            predicate: this.buildingBlocks.pDcatDistribution
+                        }, response.triples)[0];
+                        let downlink = util.filterTriples({
+                            subject: distr.object,
+                            predicate: this.buildingBlocks.pDcatDownloadUrl
+                        }, response.triples)[0].object;
+                        // Get downlink for distribution
+                        this._rangegates[downlink] = t.object;
+                    });
                 });
             });
 

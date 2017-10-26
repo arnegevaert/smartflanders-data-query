@@ -53,3 +53,16 @@ dq3.getInterval(now - 60*60*24*2, now,
     stat => console.log("STAT:", stat),
     error => console.log(error),
     () => console.log('Complete'));
+
+// Example 4
+
+let dq4 = new query();
+let now4 = moment().unix();
+
+dq4.addCatalog('https://datapiloten.be/parking/catalog.ttl').then(() => {
+    dq4.getInterval(now4 - 60*60*24*2, now4,
+        {mode: {zoomLevel: 3}}).subscribe(
+        stat => console.log("STAT:", stat),
+        error => console.log(error),
+        () => console.log('Complete'));
+});
