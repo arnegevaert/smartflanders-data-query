@@ -12,37 +12,36 @@ var query = require('smartflanders-data-query');
 ```
 
 ## Datatypes
-The library defines a few models to represent different data structures:
+The library defines a few models to represent different data structures. The structure of these
+models is based on the [JSON_LD](https://json-ld.org/) standard:
 
 ### Parking
 ``` js
 { label: string,
-  uri: string,
-  id: string,
+  '@id': string,
   totalSpaces:int,
-  datasetUrl: string }
+  dataset: {'@id': string} }
 ```
 - `label`: Contains the [rdfs:label](http://www.w3.org/2000/01/rdf-schema#label) of the parking.
-- `uri`: Contains the URI that represents the parking.
-- `id`: Contains a generated parking ID, derived from the [rdfs:label](http://www.w3.org/2000/01/rdf-schema#label).
+- `@id`: Contains the URI that represents the parking.
 - `totalSpaces`: Contains the total amount of spaces of the parking.
-- `datasetUrl`: Contains the URL of the dataset where data of this parking can be found.
+- `dataset`: Contains the URI of the dataset where data of this parking can be found.
 
 ### Measurement
 ``` js
 { timestamp: int,
-  parkingUrl: string
+  parking: {'@id': string},
   value: int }
 ```
 - `timestamp`: Contains the UNIX timestamp of when this measurement was made.
-- `parkingUrl`: Contains the URL that represents the parking of this measurement.
+- `parking`: Contains the URI that represents the parking of this measurement.
 - `value`: Contains the amount of available spaces that was recorded.
 
 ### Statistic
 ``` js
 { init: int,
   final: int,
-  parkingUrl: string,
+  parking: {'@id': string},
   mean: double,
   variance: double,
   firstQuartile: double,
@@ -52,7 +51,7 @@ The library defines a few models to represent different data structures:
 This object represent a statistical summary of the occupancy of a certain parking over a certain interval.
 - `init`: Contains the UNIX timestamp of the beginning of the interval.
 - `final`: Contains the UNIX timestamp of the end of the interval.
-- `parkingUrl`: Contains the URL that represents the parking of this statistical summary.
+- `parking`: Contains the URI that represents the parking of this statistical summary.
 - `mean`: Contains the mean of the absolute occupancy of the parking over the interval.
 - `variance`: Contains the variance of the absolute occupancy of the parking over the interval.
 - `firstQuartile`: Contains the first quartile of the absolute occupancy of the parking over the interval.
