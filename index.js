@@ -8,7 +8,34 @@ const thr = require('throw');
 const pdi = require('./parking-data-interval.js');
 const util = require('./util.js');
 
-// TODO change MDI building blocks prefixes! Also in backend
+/*
+PARKING
+{
+    label: string
+    @id: string // uri
+    totalSpaces: int
+    dataset: {@id: string} // datasetUrl
+}
+
+MEASUREMENT
+{
+    timestamp: int
+    parking: {@id: string} // parkingUrl
+    value: int
+}
+
+STATISTIC
+{
+    init: int
+    final: int
+    parking: {@id: string} // parkingUrl
+    mean: double
+    variance: double
+    firstQuartile: double
+    thirdQuartile: double
+    median: double
+}
+ */
 
 class SmartflandersDataQuery {
     constructor() {
