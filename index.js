@@ -8,35 +8,6 @@ const thr = require('throw');
 const pdi = require('./parking-data-interval.js');
 const util = require('./util.js');
 
-/*
-PARKING
-{
-    label: string
-    @id: string // uri
-    totalSpaces: int
-    dataset: {@id: string} // datasetUrl
-}
-
-MEASUREMENT
-{
-    timestamp: int
-    parking: {@id: string} // parkingUrl
-    value: int
-}
-
-STATISTIC
-{
-    init: int
-    final: int
-    parking: {@id: string} // parkingUrl
-    mean: double
-    variance: double
-    firstQuartile: double
-    thirdQuartile: double
-    median: double
-}
- */
-
 class SmartflandersDataQuery {
     constructor() {
         this.fetch = new ldfetch();
@@ -157,13 +128,11 @@ class SmartflandersDataQuery {
                             return o.subject === parking.subject
                         });
                         const rdfslabel = n3.Util.getLiteralValue(labelresult.object);
-                        const id = rdfslabel.replace(' ', '-').toLowerCase();
                         const parkingObj = {
                             label: rdfslabel,
-                            uri: parking.subject,
-                            id: id,
+                            '@id': parking.subject,
                             totalSpaces: totalspacesParking,
-                            datasetUrl: datasetUrl,
+                            dataset: {'@id': datasetUrl},
                         };
                         observer.onNext(parkingObj);
                     });

@@ -32,7 +32,7 @@ class ParkingDataInterval {
                     this.fetchedUris.push(response.url);
                 }
                 //console.log('fetched ', link);
-                if (util.filterTriples({predicate: 'http://rdfs.org/ns/void#subset', object: response.url}, response.triples).length !== 0) {
+                if (util.filterTriples({predicate: 'http://rdfs.org/ns/void#subset', object: response.url}, response.triples).length === 0) {
                     // We fetched precise data, parse and filter
                     //console.log(link, " is a leaf node");
                     this.processExact(response, observer, link);
@@ -135,7 +135,7 @@ class ParkingDataInterval {
             result.push({
                 init: init,
                 final: final,
-                parkingUrl: p.subject,
+                parking: {'@id': p.subject},
                 mean: mean,
                 variance: variance,
                 firstQuartile: firstQ,
@@ -161,14 +161,14 @@ class ParkingDataInterval {
         const prevLinks = [];
         prevLinkTriples.forEach(triple => {
             prevLinks.push(triple.object);
-        })
+        });
 
         for (let index = 0; index < parkingTriples.length; index++) {
             const graphTriple = lodash.find(graphs, (o) => parkingTriples[index].graph === o.subject);
             _measurements.push({
                 timestamp: moment(n3.Util.getLiteralValue(graphTriple.object)).unix(),
                 value: parseInt(n3.Util.getLiteralValue(parkingTriples[index].object), 10),
-                parkingUrl: parkingTriples[index].subject
+                parking: {'@id': parkingTriples[index].subject}
             });
         }
         return {
