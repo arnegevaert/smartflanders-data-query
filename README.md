@@ -98,51 +98,51 @@ Returns an [Observable](http://reactivex.io/rxjs/class/es6/Observable.js~Observa
 Below are some examples of usages of this library:
 
 ### Example 1
-This example adds a catalog file, prints the labels of the parkings that are found in this catalog, and then fetches and prints all data from all parkings of the last 24 hours:
+This example adds a catalog file, prints the URIs of the parkings that are found in this catalog, and then fetches and prints all data from all parkings of the last 24 hours:
 ``` js
 const query = require('smartflanders-data-query');
 const moment = require('moment');
 
-let dq = new query();
+let dq1 = new query();
 
-dq.addCatalog('https://datapiloten.be/parking/catalog.ttl')
-  .then(() => {
-    dq.getParkings().subscribe(parking => {
-      console.log(parking.label);
-    },
-    (error) => console.log(error),
-    () => {
-      const from = moment().unix()-60*60*24;
-      const to = moment().unix();
-      const ds =  dq.getCatalog()[0];
-      dq.getInterval(from, to).subscribe(meas => {
-        console.log(meas.parkingUrl, meas.timestamp, meas.value);
-      },
-      (error) => console.log(error),
-      () => {
-        console.log('Complete!');
-      })
+dq1.addCatalog('https://datapiloten.be/parking/catalog.ttl')
+    .then(() => {
+        dq1.getParkings().subscribe(parking => {
+                console.log(parking.label);
+            },
+            (error) => console.log(error),
+            () => {
+                const from = moment().unix()-60*60*24;
+                const to = moment().unix();
+                const ds =  dq1.getCatalog()[0];
+                dq1.getInterval(from, to).subscribe(meas => {
+                        console.log(meas.parking['@id'], meas.timestamp, meas.value);
+                    },
+                    (error) => console.log(error),
+                    () => {
+                        console.log('Complete!');
+                    })
+            });
     });
-  });
 
 ```
 
 ### Example 2
-This example adds a few literal dataset URLs and then prints all parkings that can are found in these datasets:
+This example adds a few literal dataset URLs and then prints all parkings that can be found in these datasets:
 ``` js
 const query = require('smartflanders-data-query');
 
-let dq = new query();
+let dq2 = new query();
 
-dq.addDataset('https://linked.open.gent/parking');
-dq.addDataset('https://kortrijk.datapiloten.be/parking');
-dq.addDataset('https://leuven.datapiloten.be/parking');
+dq2.addDataset('https://linked.open.gent/parking');
+dq2.addDataset('https://kortrijk.datapiloten.be/parking');
+dq2.addDataset('https://leuven.datapiloten.be/parking');
 
-dq.getParkings().subscribe(parking => {
-  console.log(parking.label);
-},
-(error) => console.log(error),
-() => console.log('Complete!'));
+dq2.getParkings().subscribe(parking => {
+        console.log(parking);
+    },
+    (error) => console.log(error),
+    () => console.log('Complete!'));
 ```
 
 ### Example 3
@@ -153,18 +153,18 @@ on day level, meaning the statistics will be calculated over the span of 1 day.
 const query = require('smartflanders-data-query');
 const moment = require('moment');
 
-let dq = new query();
+let dq3 = new query();
 
-dq.addDataset('http://kortrijk.datapiloten.be/parking');
-dq.addMDIEntry('http://kortrijk.datapiloten.be/parking',
-    'http://kortrijk.datapiloten.be/parking/rangegate');
+dq3.addDataset('http://leuven.datapiloten.be/parking');
+dq3.addMDIEntry('http://leuven.datapiloten.be/parking',
+    'http://leuven.datapiloten.be/parking/rangegate');
 
 let now = moment().unix();
-dq.getInterval(now - 60*60*24*2, now,
+dq3.getInterval(now - 60*60*24*2, now,
     {mode: {precision: "day"}}).subscribe(
-        stat => console.log("STAT:", stat),
-        error => console.log(error),
-        () => console.log('Complete'));
+    stat => console.log("STAT:", stat),
+    error => console.log(error),
+    () => console.log('Complete'));
 ```
 
 ### Example 4
@@ -176,11 +176,11 @@ will be queried directly, i.e. the exact data will be fetched over this interval
 const query = require('smartflanders-data-query');
 const moment = require('moment');
 
-let dq = new query();
-dq.addCatalog('https://datapiloten.be/parking/catalog.ttl');
+let dq4 = new query();
+dq4.addCatalog('https://datapiloten.be/parking/catalog.ttl');
 
 let now = moment().unix();
-dq.getInterval(now - 60*60*24*2, now,
+dq4.getInterval(now - 60*60*24*2, now,
     {mode: {zoomLevel: 3}}).subscribe(
         stat => console.log("STAT:", stat),
         error => console.log(error),
