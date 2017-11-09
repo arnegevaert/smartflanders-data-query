@@ -214,10 +214,14 @@ class SmartflandersDataQuery {
         return Rx.Observable.create(observer => {
             this._catalog.forEach(dataset => {
                 let entry = dataset + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+                let alt = false;
                 if (this.hasMDIEntry(dataset)) {
+                    alt = entry;
                     entry = this.getMDIEntry(dataset);
                 }
-                new pdi(from, to, entry).fetch(conf).subscribe(meas => {
+                let pdiInstance = new pdi(from, to, entry);
+                if (alt) pdiInstance.addAlternative(alt);
+                pdiInstance.fetch(conf).subscribe(meas => {
                     observer.onNext(meas);
                 }, (error) => observer.onError(error), () => {
                     barrier[dataset] = true;
@@ -237,21 +241,29 @@ class SmartflandersDataQuery {
     // Returns an Observable
     getDatasetInterval(from, to, datasetUrl, conf = {mode: {precision: 'precise'}}) {
         let entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+        let alt = false;
         if (this.hasMDIEntry(datasetUrl)) {
+            alt = entry;
             entry = this.getMDIEntry(datasetUrl);
         }
-        return new pdi(from, to, entry).fetch(conf);
+        let pdiInstance = new pdi(from, to, entry);
+        if (alt) pdiInstance.addAlternative(alt);
+        return pdiInstance.fetch(conf);
     }
 
     // Gets an interval of data for one parking
     // Returns an Observable
     getParkingInterval(from, to, datasetUrl, uri, conf = {mode: {precision: 'precise'}}) {
         let entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+        let alt = false;
         if (this.hasMDIEntry(datasetUrl)) {
+            alt = entry;
             entry = this.getMDIEntry(datasetUrl);
         }
+        let pdiInstance = new pdi(from, to, entry);
+        if (alt) pdiInstance.addAlternative(alt);
         return Rx.Observable.create(observer => {
-            new pdi(from, to, entry).fetch(conf).subscribe(meas => {
+            pdiInstance.fetch(conf).subscribe(meas => {
                 if (meas.parkingUrl === uri) {
                     observer.onNext(meas);
                 }
