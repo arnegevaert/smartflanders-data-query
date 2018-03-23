@@ -13,6 +13,11 @@ class ParkingDataInterval {
         this.fetchedUris = [];
         this.entry = entry;
         this.fetchQueue = [entry];
+        this.alternatives = [];
+    }
+
+    addAlternative(entry) {
+        this.alternatives.push(entry);
     }
 
     fetch(conf = {mode: {precision: 'precise'}}) {
@@ -27,23 +32,32 @@ class ParkingDataInterval {
         if (link !== undefined && this.fetchedUris.indexOf(link) === -1) {
             this.fetchedUris.push(link);
             const fetch = new ldfetch();
-            fetch.get(link).then(response => {
-                if (!this.fetchedUris.includes(response.url)) {
-                    this.fetchedUris.push(response.url);
-                }
-                //console.log('fetched ', link);
-                if (util.filterTriples({predicate: 'http://rdfs.org/ns/void#subset', object: response.url}, response.triples).length !== 0) {
-                    // We fetched precise data, parse and filter
-                    //console.log(link, " is a leaf node");
-                    this.processExact(response, observer, link);
-                    this.fetch_rec(observer);
-                } else {
-                    // We fetched a range gate, decide if we need to fetch the children
-                    //console.log(link, " is a range gate");
-                    this.processRangeGate(response, observer, conf);
-                    this.fetch_rec(observer, conf);
-                }
-            }).catch(error => console.log('Error: ', error));
+            let getLink = link => {
+                fetch.get(link).then(response => {
+                    if (!this.fetchedUris.includes(response.url)) {
+                        this.fetchedUris.push(response.url);
+                    }
+                    //console.log('fetched ', link);
+                    if (util.filterTriples({predicate: 'http://rdfs.org/ns/void#subset', object: response.url}, response.triples).length !== 0) {
+                        // We fetched precise data, parse and filter
+                        //console.log(link, " is a leaf node");
+                        this.processExact(response, observer, link);
+                        this.fetch_rec(observer);
+                    } else {
+                        // We fetched a range gate, decide if we need to fetch the children
+                        //console.log(link, " is a range gate");
+                        this.processRangeGate(response, observer, conf);
+                        this.fetch_rec(observer, conf);
+                    }
+                }).catch(error => {
+                    if (this.alternatives.length > 0) {
+                        let alt = this.alternatives.pop();
+                        console.log('Trying alternative:', alt);
+                        getLink(alt);
+                    }
+                });
+            };
+            getLink(link);
         } else if (link !== undefined) {
             this.fetch_rec(observer);
         } else {

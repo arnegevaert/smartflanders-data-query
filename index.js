@@ -102,8 +102,20 @@ class SmartflandersDataQuery {
         }
     }
 
+    removeMDIEntry(dataset) {
+        delete this._rangegates[dataset];
+    }
+
     hasMDIEntry(dataset) {
         return this._rangegates[dataset] !== undefined;
+    }
+
+    MDIEntryToOriginal(url) {
+        let result = false;
+        Object.keys(this._rangegates).forEach(key => {
+            if (this._rangegates[key] === url) result = key;
+        });
+        return result;
     }
 
     getMDIEntry(dataset) {
@@ -122,11 +134,8 @@ class SmartflandersDataQuery {
                     barrier[url] = false;
                 }
             });
-            this._catalog.forEach(datasetUrl => {
-                // If we have an MDI entry point, use that one
-                if (this.hasMDIEntry(datasetUrl)) {
-                    datasetUrl = this.getMDIEntry(datasetUrl);
-                }
+
+            let getParkingsForDataset = datasetUrl => {
                 this.fetch.get(datasetUrl).then(response => {
                     // Get all subjects that are parkings
                     const parkings = util.filterTriples({object: this.buildingBlocks.oDatexUrbanParkingSite}, response.triples);
@@ -159,15 +168,29 @@ class SmartflandersDataQuery {
                         observer.onCompleted();
                     }
                 }).catch(error => {
-                    barrier[datasetUrl] = true;
-                    let finished = true;
-                    Object.keys(barrier).forEach(key => {
-                        if (barrier[key] === false) finished = false
-                    });
-                    if (finished) {
-                        observer.onCompleted();
+                    let orig = this.MDIEntryToOriginal(datasetUrl);
+                    if (orig) {
+                        this.removeMDIEntry(datasetUrl);
+                        getParkingsForDataset(orig);
+                    } else {
+                        barrier[datasetUrl] = true;
+                        let finished = true;
+                        Object.keys(barrier).forEach(key => {
+                            if (barrier[key] === false) finished = false
+                        });
+                        if (finished) {
+                            observer.onCompleted();
+                        }
                     }
                 });
+            };
+
+            this._catalog.forEach(datasetUrl => {
+                // If we have an MDI entry point, use that one
+                if (this.hasMDIEntry(datasetUrl)) {
+                    datasetUrl = this.getMDIEntry(datasetUrl);
+                }
+                getParkingsForDataset(datasetUrl);
             });
         });
     }
@@ -191,10 +214,14 @@ class SmartflandersDataQuery {
         return Rx.Observable.create(observer => {
             this._catalog.forEach(dataset => {
                 let entry = dataset + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+                let alt = false;
                 if (this.hasMDIEntry(dataset)) {
+                    alt = entry;
                     entry = this.getMDIEntry(dataset);
                 }
-                new pdi(from, to, entry).fetch(conf).subscribe(meas => {
+                let pdiInstance = new pdi(from, to, entry);
+                if (alt) pdiInstance.addAlternative(alt);
+                pdiInstance.fetch(conf).subscribe(meas => {
                     observer.onNext(meas);
                 }, (error) => observer.onError(error), () => {
                     barrier[dataset] = true;
@@ -214,21 +241,29 @@ class SmartflandersDataQuery {
     // Returns an Observable
     getDatasetInterval(from, to, datasetUrl, conf = {mode: {precision: 'precise'}}) {
         let entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+        let alt = false;
         if (this.hasMDIEntry(datasetUrl)) {
+            alt = entry;
             entry = this.getMDIEntry(datasetUrl);
         }
-        return new pdi(from, to, entry).fetch(conf);
+        let pdiInstance = new pdi(from, to, entry);
+        if (alt) pdiInstance.addAlternative(alt);
+        return pdiInstance.fetch(conf);
     }
 
     // Gets an interval of data for one parking
     // Returns an Observable
     getParkingInterval(from, to, datasetUrl, uri, conf = {mode: {precision: 'precise'}}) {
         let entry = datasetUrl + '?time=' + moment.unix(to).format('YYYY-MM-DDTHH:mm:ss');
+        let alt = false;
         if (this.hasMDIEntry(datasetUrl)) {
+            alt = entry;
             entry = this.getMDIEntry(datasetUrl);
         }
+        let pdiInstance = new pdi(from, to, entry);
+        if (alt) pdiInstance.addAlternative(alt);
         return Rx.Observable.create(observer => {
-            new pdi(from, to, entry).fetch(conf).subscribe(meas => {
+            pdiInstance.fetch(conf).subscribe(meas => {
                 if (meas.parkingUrl === uri) {
                     observer.onNext(meas);
                 }

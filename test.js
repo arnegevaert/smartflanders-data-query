@@ -2,7 +2,7 @@ const query = require('./index.js');
 const moment = require('moment');
 
 // Example 1
-
+/*
 let dq1 = new query();
 
 dq1.addCatalog('https://datapiloten.be/parking/catalog.ttl')
@@ -24,14 +24,15 @@ dq1.addCatalog('https://datapiloten.be/parking/catalog.ttl')
                     })
             });
     });
-
+*/
 // Example 2
 
 let dq2 = new query();
 
 dq2.addDataset('https://linked.open.gent/parking');
-dq2.addDataset('https://kortrijk.datapiloten.be/parking');
-dq2.addDataset('https://leuven.datapiloten.be/parking');
+dq2.addMDIEntry('https://linked.open.gent/parking', 'https://linked.open.gent/parking/rangegate');
+//dq2.addDataset('https://kortrijk.datapiloten.be/parking');
+//dq2.addDataset('https://leuven.datapiloten.be/parking');
 
 dq2.getParkings().subscribe(parking => {
         console.log(parking);
@@ -41,7 +42,7 @@ dq2.getParkings().subscribe(parking => {
 
 // Example 3
 
-let dq3 = new query();
+/*let dq3 = new query();
 
 dq3.addDataset('http://leuven.datapiloten.be/parking');
 dq3.addMDIEntry('http://leuven.datapiloten.be/parking',
@@ -65,4 +66,4 @@ dq4.addCatalog('https://datapiloten.be/parking/catalog.ttl').then(() => {
         stat => console.log("STAT:", stat),
         error => console.log(error),
         () => console.log('Complete'));
-});
+});*/
